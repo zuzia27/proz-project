@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16
+    container_name: sprzet-postgres
+    environment:
+      POSTGRES_DB: sprzet
+      POSTGRES_USER: sprzet
+      POSTGRES_PASSWORD: sprzet
+    ports:
+      - "5432:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+volumes:
+  dbdata:

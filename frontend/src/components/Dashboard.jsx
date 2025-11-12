@@ -1,35 +1,94 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, Settings, AlertTriangle, Ban, FileText, Plus } from 'lucide-react';
-import { mockApi } from '../api/mockApi';
 import { EquipmentTable } from './EquipmentTable';
 import { EquipmentForm } from './EquipmentForm';
+import { shouldAutoUpdateToRequiresInspection } from '../utils/statusLogic';
+import { equipmentApi as api } from '../api/api';
+
+
 
 export const Dashboard = () => {
   const [equipment, setEquipment] = useState([]);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState(null);   // NIE tablica
+  const [isFormOpen, setIsFormOpen] = useState(false);          // NIE []
 
-  useEffect(() => {
-    loadEquipment();
-  }, []);
-
-  const loadEquipment = () => {
-    const data = mockApi.list();
-    setEquipment(data);
+  // Funkcja ładująca dane z backendu – teraz ASYNC
+  const loadEquipment = async () => {
+    try {
+      const data = await api.list();
+      setEquipment(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Błąd przy pobieraniu sprzętu:', error);
+      setEquipment([]);
+    }
   };
 
-  const handleAddEquipment = (newEquipment) => {
-    mockApi.add(newEquipment);
-    loadEquipment();
-  };
+useEffect(() => { loadEquipment(); }, []);
 
-  const handleStatusChange = (id, status, newInspectionDate) => {
-    mockApi.updateStatus(id, status, newInspectionDate);
-    loadEquipment();
-  };
+  // Z listy z backendu robimy wersję z effectiveStatus (tak jak tabela)
+const withEffective = (Array.isArray(equipment) ? equipment : []).map((it) => {
+  let effective = it?.status;
+  if (effective === 'SPRAWNY' && it?.nextInspectionDate) {
+    const d = new Date(it.nextInspectionDate);
+    const today = new Date();
+    const dMid = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const tMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    if (dMid <= tMid) effective = 'WYMAGA_PRZEGLADU'; // <= KLUCZ
+  }
+  return { ...it, effectiveStatus: effective };
+});
 
-  const getStatusCount = (status) => {
-    return equipment.filter(e => e.status === status).length;
-  };
+const getStatusCount = (s) =>
+  withEffective.filter((x) => x.effectiveStatus === s).length;
+
+
+
+  // Dodawanie sprzętu – też ASYNC, po zapisie odświeżamy listę
+const handleAddEquipment = async (newEquipment) => {
+  try {
+    const saved = await api.add(newEquipment);
+    setEquipment(prev => [...prev, saved]); // szybka aktualizacja UI
+    // ewentualnie: await loadEquipment();
+    setIsFormOpen(false);
+  } catch (e) {
+    console.error('Błąd dodawania:', e);
+  }
+};
+
+const handleStatusChange = async (id, status, nextInspectionDate) => {
+  try {
+    await api.updateStatus(id, status, nextInspectionDate);
+    await loadEquipment();           // refetch = świeże dane do tabeli i kafelków
+  } catch (e) {
+    console.error('Błąd zmiany statusu', e);
+  }
+};
+
+
+const handleDownloadPdf = async () => {
+  try {
+    const blob = await api.downloadReport(); // możesz przekazać selectedStatus
+    const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'raport-sprzet.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error('Błąd generowania raportu:', e);
+    alert('Nie udało się wygenerować raportu PDF.');
+  }
+};
+
+  const getEffectiveStatus = (item) => {
+  if (item.status === 'SPRAWNY' && shouldAutoUpdateToRequiresInspection(item.nextInspectionDate)) {
+    return 'WYMAGA_PRZEGLADU';
+  }
+  return item.status;
+};
+
 
   const stats = [
     {
@@ -76,10 +135,14 @@ export const Dashboard = () => {
               </p>
             </div>
             <div className="flex gap-3">
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
-                <FileText className="w-4 h-4" />
-                Generuj raport PDF
-              </button>
+            <button
+              onClick={handleDownloadPdf}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              <FileText className="w-4 h-4" />
+              Generuj raport PDF
+            </button>
+
               <button
                 onClick={() => setIsFormOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"

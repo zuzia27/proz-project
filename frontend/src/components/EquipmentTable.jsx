@@ -12,6 +12,8 @@ import {
 } from '../utils/statusLogic';
 
 export const EquipmentTable = ({ equipment, onStatusChange }) => {
+  const safeEquipment = Array.isArray(equipment) ? equipment : [];
+
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('name');
   const [editingStatusId, setEditingStatusId] = useState(null);
@@ -54,22 +56,22 @@ export const EquipmentTable = ({ equipment, onStatusChange }) => {
     return item.status;
   };
 
-  const filteredAndSorted = equipment
-    .map(item => ({
-      ...item,
-      effectiveStatus: getEffectiveStatus(item)
-    }))
-    .filter(item => statusFilter === 'ALL' || item.effectiveStatus === statusFilter)
-    .sort((a, b) => {
-      if (sortBy === 'name') {
-        return a.name.localeCompare(b.name);
-      } else {
-        if (!a.nextInspectionDate && !b.nextInspectionDate) return 0;
-        if (!a.nextInspectionDate) return 1;
-        if (!b.nextInspectionDate) return -1;
-        return a.nextInspectionDate.localeCompare(b.nextInspectionDate);
-      }
-    });
+const filteredAndSorted = safeEquipment
+  .map(item => ({
+    ...item,
+    effectiveStatus: getEffectiveStatus(item)
+  }))
+  .filter(item => statusFilter === 'ALL' || item.effectiveStatus === statusFilter)
+  .sort((a, b) => {
+    if (sortBy === 'name') {
+      return a.name.localeCompare(b.name);
+    } else {
+      if (!a.nextInspectionDate && !b.nextInspectionDate) return 0;
+      if (!a.nextInspectionDate) return 1;
+      if (!b.nextInspectionDate) return -1;
+      return a.nextInspectionDate.localeCompare(b.nextInspectionDate);
+    }
+  });
 
   const handleStatusChangeClick = (id, fromStatus, toStatus) => {
     if (requiresNewInspectionDate(fromStatus, toStatus)) {
@@ -163,10 +165,9 @@ export const EquipmentTable = ({ equipment, onStatusChange }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredAndSorted.map((item) => {
+                {filteredAndSorted.map((item) => {
                 const availableTransitions = getAvailableStatusTransitions(item.effectiveStatus);
                 const isRetired = item.effectiveStatus === 'WYCOFANY';
-
                 return (
                   <tr key={item.id} className={`hover:bg-gray-50 ${isRetired ? 'opacity-60' : ''}`}>
                     <td className="px-4 py-4">
