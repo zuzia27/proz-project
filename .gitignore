@@ -62,6 +62,6 @@ backend/sprzet/bin/
 backend/sprzet/out/
 backend/sprzet/.gradle/
 
-# H2 Database - NIE COMMITUJ BAZY!
+# H2 Database 
 backend/sprzet/data/*.mv.db
 backend/sprzet/data/*.trace.db
