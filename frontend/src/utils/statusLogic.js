@@ -1,3 +1,4 @@
+// Dostępne przejścia między statusami
 export function getAvailableStatusTransitions(currentStatus) {
   switch (currentStatus) {
     case 'SPRAWNY':
@@ -10,31 +11,22 @@ export function getAvailableStatusTransitions(currentStatus) {
       return ['SPRAWNY', 'W_NAPRAWIE', 'WYCOFANY'];
     
     case 'WYCOFANY':
-      return [];
+      return []; // Sprzęt wycofany - brak możliwych akcji
     
     default:
       return [];
   }
 }
 
+// Walidacja: czy przy zmianie statusu wymagana jest nowa data przeglądu?
+// TAK - gdy zmieniamy na SPRAWNY z W_NAPRAWIE lub WYMAGA_PRZEGLADU
 export function requiresNewInspectionDate(fromStatus, toStatus) {
   if (toStatus !== 'SPRAWNY') return false;
   
   return fromStatus === 'W_NAPRAWIE' || fromStatus === 'WYMAGA_PRZEGLADU';
 }
 
-export function shouldAutoUpdateToRequiresInspection(inspectionDate) {
-  if (!inspectionDate) return false;
-  
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const inspection = new Date(inspectionDate);
-  inspection.setHours(0, 0, 0, 0);
-  
-  return inspection.getTime() <= today.getTime();
-}
-
+// Sprawdzenie czy data przeglądu zbliża się (1-3 dni) - do ostrzeżenia
 export function isInspectionDateApproaching(inspectionDate) {
   if (!inspectionDate) return false;
   
@@ -50,6 +42,7 @@ export function isInspectionDateApproaching(inspectionDate) {
   return diffDays >= 1 && diffDays <= 3;
 }
 
+// Sprawdzenie czy data przeglądu minęła - do kolorowania na czerwono
 export function isInspectionDateOverdue(inspectionDate) {
   if (!inspectionDate) return false;
   
@@ -59,6 +52,7 @@ export function isInspectionDateOverdue(inspectionDate) {
   const inspection = new Date(inspectionDate);
   inspection.setHours(0, 0, 0, 0);
   
+  // Data po terminie (włącznie z dzisiaj)
   return inspection.getTime() <= today.getTime();
 }
 

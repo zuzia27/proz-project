@@ -1,35 +1,77 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, Settings, AlertTriangle, Ban, FileText, Plus } from 'lucide-react';
-import { mockApi } from '../api/mockApi';
+import { CheckCircle, Settings, AlertTriangle, Ban, Plus } from 'lucide-react';
 import { EquipmentTable } from './EquipmentTable';
 import { EquipmentForm } from './EquipmentForm';
+import { equipmentApi as api } from '../api/api';
+
+
 
 export const Dashboard = () => {
+
   const [equipment, setEquipment] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  useEffect(() => {
-    loadEquipment();
-  }, []);
-
-  const loadEquipment = () => {
-    const data = mockApi.list();
-    setEquipment(data);
+  // Pobieranie danych z backendu przez API
+  const loadEquipment = async () => {
+    try {
+      const data = await api.list();
+      setEquipment(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Błąd przy pobieraniu sprzętu:', error);
+      setEquipment([]);
+    }
   };
 
-  const handleAddEquipment = (newEquipment) => {
-    mockApi.add(newEquipment);
-    loadEquipment();
+  useEffect(() => { loadEquipment(); }, []);
+
+  const safeEquipment = Array.isArray(equipment) ? equipment : [];
+
+  // Funkcja licząca sprzęt wg statusu - używana w kafelkach statystyk
+  const getStatusCount = (status) =>
+    safeEquipment.filter((item) => item.status === status).length;
+
+  const handleAddEquipment = async (newEquipment) => {
+    try {
+      const saved = await api.add(newEquipment);
+      // Dodajemy do state obiekt zwrócony przez backend (z ID)
+      setEquipment(prev => [...prev, saved]);
+      setIsFormOpen(false);
+    } catch (e) {
+      console.error('Błąd dodawania:', e);
+    }
   };
 
-  const handleStatusChange = (id, status, newInspectionDate) => {
-    mockApi.updateStatus(id, status, newInspectionDate);
-    loadEquipment();
+  // Zmiana statusu - po zmianie odświeżamy całą listę z backendu
+  const handleStatusChange = async (id, status, nextInspectionDate) => {
+    try {
+      await api.updateStatus(id, status, nextInspectionDate);
+      await loadEquipment();
+    } catch (e) {
+      console.error('Błąd zmiany statusu', e);
+    }
   };
 
-  const getStatusCount = (status) => {
-    return equipment.filter(e => e.status === status).length;
+  // Generowanie i pobieranie raportu PDF
+  const handleDownloadPdf = async () => {
+    try {
+      // Backend zwraca plik jako blob
+      const blob = await api.downloadReport();
+      // Tworzymy tymczasowy URL do pobrania pliku
+      const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'raport-sprzet.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // Zwalniamy pamięć
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Błąd generowania raportu:', e);
+      alert('Nie udało się wygenerować raportu PDF.');
+    }
   };
+
 
   const stats = [
     {
@@ -76,10 +118,6 @@ export const Dashboard = () => {
               </p>
             </div>
             <div className="flex gap-3">
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
-                <FileText className="w-4 h-4" />
-                Generuj raport PDF
-              </button>
               <button
                 onClick={() => setIsFormOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -110,6 +148,7 @@ export const Dashboard = () => {
         <EquipmentTable
           equipment={equipment}
           onStatusChange={handleStatusChange}
+          onDownloadReport={handleDownloadPdf}
         />
 
         <EquipmentForm

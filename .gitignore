@@ -7,6 +7,9 @@ env/
 .env
 .env.local
 .env.*.local
+frontend/.env
+backend/.env
+
 
 # Logs
 logs/
@@ -48,3 +51,17 @@ __pycache__/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+
+backend/sprzet/src/main/resources/fonts/*
+!backend/sprzet/src/main/resources/fonts/NotoSans-Regular.ttf
+
+# Java/Spring Boot
+*.class
+backend/sprzet/bin/
+backend/sprzet/out/
+backend/sprzet/.gradle/
+
+# H2 Database 
+backend/sprzet/data/*.mv.db
+backend/sprzet/data/*.trace.db
