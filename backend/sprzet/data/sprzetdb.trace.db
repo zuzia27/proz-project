@@ -53,3 +53,7 @@ The connection was not closed by the application and is garbage collected [90018
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:690)
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:489)
 	... 47 more
+2025-11-19 21:49:28.274505+01:00 jdbc[48]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "DELETE [*]* FROM SPRZET"; oczekiwano "identifier"
+Syntax error in SQL statement "DELETE [*]* FROM SPRZET"; expected "identifier"; SQL statement:
+DELETE * FROM SPRZET [42001-232]

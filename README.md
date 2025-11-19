@@ -1,18 +1,18 @@
 # System Ewidencji Sprzętu Medycznego
 
 Aplikacja klient–serwer do zarządzania sprzętem medycznym w placówce zdrowia.  
-Frontend w **React + Tailwind CSS**, backend w **Spring Boot + H2** (baza plikowa).
+Frontend w **React + Tailwind CSS**, backend w **Spring Boot + H2**.
 
 ---
 
 ##  Funkcje
 
-- Przeglądanie listy sprzętu (filtry, sortowanie)
-- Dodawanie nowego sprzętu (formularz modalny)
-- Zmiana statusu urządzenia z poziomu tabeli
-- Kolorowanie terminów przeglądów (zbliża się, po terminie)
-- Automatyczna normalizacja statusów (po stronie backendu)
-- Trwałe zapisywanie danych w bazie H2 (plikowej)
+- Przeglądanie listy sprzętu z filtrowaniem
+- Sortowanie po nazwie lub dacie przeglądu
+- Dodawanie nowego sprzętu 
+- Zmiana statusu urządzenia (ręczna oraz autmatyczna)
+- Generowanie raportów PDF
+- Dashboard ze statystykami 
 
 ---
 
@@ -28,20 +28,30 @@ Frontend w **React + Tailwind CSS**, backend w **Spring Boot + H2** (baza plikow
 ---
 
 ## Struktura projektu
+
+```
 ├── backend/
-│ └── sprzet/
-│ ├── src/main/java/pl/proz/sprzet/...
-│ └── src/main/resources/application.properties
+│   └── sprzet/
+│       ├── src/main/java/pl/proz/sprzet/
+│       │   ├── controller/      # REST API endpoints
+│       │   ├── service/         # Logika biznesowa
+│       │   ├── repository/      # Dostęp do bazy
+│       │   ├── model/           # Encje
+│       │   └── report/          # Generowanie PDF
+│       └── src/main/resources/
+│           └── application.properties
+│
 └── frontend/
-├── src/
-│ ├── api/api.js
-│ ├── components/
-│ │ ├── Dashboard.jsx
-│ │ ├── EquipmentTable.jsx
-│ │ ├── EquipmentForm.jsx
-│ │ └── StatusBadge.jsx
-│ └── utils/statusLogic.js
-└── .env
+    ├── src/
+    │   ├── api/api.js           # Komunikacja z backendem
+    │   ├── components/          # Komponenty React
+    │   │   ├── Dashboard.jsx
+    │   │   ├── EquipmentTable.jsx
+    │   │   ├── EquipmentForm.jsx
+    │   │   └── StatusBadge.jsx
+    │   └── utils/statusLogic.js # Pomocnicze funkcje
+    └── .env
+```
 
 
 ---
@@ -50,7 +60,7 @@ Frontend w **React + Tailwind CSS**, backend w **Spring Boot + H2** (baza plikow
 
 ### Wymagania
 
-- **Java 17+** (zalecane 21)
+- **Java 17+**
 - **Node.js 18+ i npm**
 - Przeglądarka (Chrome / Edge / Firefox)
 
@@ -64,41 +74,50 @@ cd backend/sprzet
 gradlew.bat bootRun
 # Linux / macOS:
 ./gradlew bootRun
+```
 
-Aplikacja backendowa uruchomi się na:
- http://localhost:8080
+Aplikacja backendowa uruchomi się na: `http://localhost:8080`
 
- ### Uruchomienie frontendu (React + Vite)
- cd frontend
+---
+
+### Uruchomienie frontendu (React + Vite)
+
+```bash
+cd frontend
 npm install
 npm run dev
+```
 
-Frontend uruchomi się na:
- http://localhost:3000
+Frontend uruchomi się na: `http://localhost:3000`
 
+---
 
-Konfiguracja
-## Zmienne środowiskowe
+## Konfiguracja
+### Zmienne środowiskowe
 
-W katalogu frontend utwórz plik .env:
+W katalogu `frontend` utwórz plik `.env`:
 
+```
 VITE_API_URL=http://localhost:8080/api
+```
 
-Dostęp do H2 Console
+---
 
-Adres: http://localhost:8080/h2-console
+### Dostęp do H2 Console
 
-JDBC URL: jdbc:h2:file:./data/sprzetdb
+- **Adres:** `http://localhost:8080/h2-console`
+- **JDBC URL:** `jdbc:h2:file:./data/sprzetdb`
+- **Login:** `sa`
+- **Hasło:** (puste)
 
-Login: sa
+Dane zapisywane w: `backend/sprzet/data/sprzetdb.mv.db`
 
-Hasło: (puste)
+---
 
-Dane są zapisywane w pliku:
-backend/sprzet/data/sprzetdb.mv.db
+## REST API
 
-
-🧩 REST API
+### Przykładowy obiekt Sprzet:
+```json
 {
   "id": 1,
   "name": "Mikroskop X200",
@@ -109,17 +128,19 @@ backend/sprzet/data/sprzetdb.mv.db
   "status": "SPRAWNY",
   "nextInspectionDate": "2025-12-10"
 }
+```
 
-Dopuszczalne statusy: 
-SPRAWNY
-W_NAPRAWIE
-WYMAGA_PRZEGLADU
-WYCOFANY
+**Dopuszczalne statusy:** `SPRAWNY`, `W_NAPRAWIE`, `WYMAGA_PRZEGLADU`, `WYCOFANY`
 
-Endpointy:
-Metoda	Endpoint	Opis
-GET	/api/sprzet	Lista wszystkich urządzeń
-GET	/api/sprzet?status=SPRAWNY	Lista wg statusu
-POST	/api/sprzet	Dodanie nowego sprzętu
-PATCH	/api/sprzet/{id}/status	Zmiana statusu (z opcjonalną datą przeglądu)
+---
 
+### Endpointy:
+
+| Metoda | Endpoint | Opis |
+|--------|----------|------|
+| GET | `/api/sprzet` | Lista wszystkich urządzeń |
+| GET | `/api/sprzet?status=SPRAWNY` | Lista wg statusu |
+| POST | `/api/sprzet` | Dodanie nowego sprzętu |
+| PATCH | `/api/sprzet/{id}/status` | Zmiana statusu (z opcjonalną datą przeglądu) |
+| GET | `/api/raport` | Generowanie raportu PDF |
+| GET | `/api/raport?status=SPRAWNY` | Raport PDF dla wybranego statusu |

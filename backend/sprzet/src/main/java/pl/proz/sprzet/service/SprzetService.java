@@ -33,9 +33,9 @@ public class SprzetService {
         return repo.markOverdueAsRequires(LocalDate.now());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Sprzet> list(StatusSprzetu status) {
-        autoMarkOverdue(); // db zawsze „naprawiona” przy liście
+        autoMarkOverdue(); // automatyczna aktualizacja przeterminowanych statusów (sprawdza datę przeglądu i jeśli jest przeterminowana, to zmienia status na WYMAGA_PRZEGLADU)
         if (status == null) return repo.findAll();
         return repo.findByStatus(status);
     }
