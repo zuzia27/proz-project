@@ -10,7 +10,7 @@ Frontend w **React + Tailwind CSS**, backend w **Spring Boot + H2**.
 - Przeglądanie listy sprzętu z filtrowaniem
 - Sortowanie po nazwie lub dacie przeglądu
 - Dodawanie nowego sprzętu 
-- Zmiana statusu urządzenia (ręczna oraz autmatyczna)
+- Zmiana statusu urządzenia (ręczna oraz automatyczna)
 - Generowanie raportów PDF
 - Dashboard ze statystykami 
 
@@ -23,7 +23,6 @@ Frontend w **React + Tailwind CSS**, backend w **Spring Boot + H2**.
 | Frontend | React 18, Vite, Tailwind CSS, Axios |
 | Backend  | Spring Boot 3, Spring Data JPA, H2 Database |
 | Komunikacja | REST + JSON |
-| Inne | Lombok, Gradle, CORS (dla localhost:3000) |
 
 ---
 
@@ -144,3 +143,4 @@ Dane zapisywane w: `backend/sprzet/data/sprzetdb.mv.db`
 | PATCH | `/api/sprzet/{id}/status` | Zmiana statusu (z opcjonalną datą przeglądu) |
 | GET | `/api/raport` | Generowanie raportu PDF |
 | GET | `/api/raport?status=SPRAWNY` | Raport PDF dla wybranego statusu |
+
