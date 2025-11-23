@@ -18,7 +18,6 @@ export const EquipmentTable = ({ equipment, onStatusChange, onDownloadReport }) 
   const [locationFilter, setLocationFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('name');
-  
 
   const [editingStatusId, setEditingStatusId] = useState(null);
   const [pendingStatusChange, setPendingStatusChange] = useState(null);
@@ -36,17 +35,17 @@ export const EquipmentTable = ({ equipment, onStatusChange, onDownloadReport }) 
       };
     }
 
-    // W naprawie - data wyszarzona (nie aktywna)
     const isGrayed = status === 'W_NAPRAWIE';
-    // Kolor: szary dla naprawy, czerwony jeśli po terminie, czarny normalnie
-    const dateColor = isGrayed ? 'text-gray-400' :
-                      isInspectionDateOverdue(nextInspectionDate) ? 'text-red-600 font-medium' :
-                      'text-gray-900';
+    const dateColor = isGrayed
+      ? 'text-gray-400'
+      : isInspectionDateOverdue(nextInspectionDate)
+      ? 'text-red-600 font-medium'
+      : 'text-gray-900';
 
-    // Ostrzeżenie "Zbliża się termin" (1-3 dni przed) tylko dla aktywnego sprzętu
-    const showWarning = !isGrayed &&
-                       status !== 'WYCOFANY' &&
-                       isInspectionDateApproaching(nextInspectionDate);
+    const showWarning =
+      !isGrayed &&
+      status !== 'WYCOFANY' &&
+      isInspectionDateApproaching(nextInspectionDate);
 
     return {
       dateText: nextInspectionDate,
@@ -56,25 +55,19 @@ export const EquipmentTable = ({ equipment, onStatusChange, onDownloadReport }) 
     };
   };
 
-  // KROK 1: Filtrowanie - 3 filtry działające jednocześnie (logika AND)
-  // KROK 2: Sortowanie - na już przefiltrowanych danych
   const filteredAndSorted = safeEquipment
-    .filter(item => {
+    .filter((item) => {
       const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter;
-
-      const matchesLocation = !locationFilter || 
+      const matchesLocation =
+        !locationFilter ||
         item.location?.toLowerCase().includes(locationFilter.toLowerCase());
-      
       const matchesType = typeFilter === 'ALL' || item.type === typeFilter;
-      
       return matchesStatus && matchesLocation && matchesType;
     })
     .sort((a, b) => {
       if (sortBy === 'name') {
-        // Sortowanie alfabetyczne po nazwie
         return a.name.localeCompare(b.name);
       } else {
-        // Sortowanie po dacie przeglądu - elementy bez daty na końcu
         if (!a.nextInspectionDate && !b.nextInspectionDate) return 0;
         if (!a.nextInspectionDate) return 1;
         if (!b.nextInspectionDate) return -1;
@@ -83,12 +76,9 @@ export const EquipmentTable = ({ equipment, onStatusChange, onDownloadReport }) 
     });
 
   const handleStatusChangeClick = (id, fromStatus, toStatus) => {
-    // Jeśli zmiana wymaga nowej daty przeglądu (np. W_NAPRAWIE → SPRAWNY)
-    // to pokazujemy modal z datą
     if (requiresNewInspectionDate(fromStatus, toStatus)) {
       setPendingStatusChange({ id, fromStatus, toStatus });
     } else {
-      // W przeciwnym razie od razu zmieniamy status
       onStatusChange(id, toStatus);
     }
     setEditingStatusId(null);
@@ -107,7 +97,22 @@ export const EquipmentTable = ({ equipment, onStatusChange, onDownloadReport }) 
     setTypeFilter('ALL');
   };
 
-  const hasActiveFilters = statusFilter !== 'ALL' || locationFilter !== '' || typeFilter !== 'ALL';
+  const hasActiveFilters =
+    statusFilter !== 'ALL' || locationFilter !== '' || typeFilter !== 'ALL';
+
+  // ⬇⬇⬇ TU PRZEKAZUJEMY FILTRY DO GÓRY ⬇⬇⬇
+  const handleDownloadClick = () => {
+    const filters = {
+      status: statusFilter === 'ALL' ? undefined : statusFilter,
+      location: locationFilter || undefined,
+      type: typeFilter === 'ALL' ? undefined : typeFilter,
+      sortBy,
+    };
+
+    if (onDownloadReport) {
+      onDownloadReport(filters);
+    }
+  };
 
   return (
     <div className="space-y-4 pb-64">
@@ -175,7 +180,8 @@ export const EquipmentTable = ({ equipment, onStatusChange, onDownloadReport }) 
           )}
 
           <div className="ml-auto text-sm text-gray-600">
-            Znaleziono: <span className="font-semibold">{filteredAndSorted.length}</span> pozycji
+            Znaleziono:{' '}
+            <span className="font-semibold">{filteredAndSorted.length}</span> pozycji
           </div>
         </div>
 
@@ -196,7 +202,7 @@ export const EquipmentTable = ({ equipment, onStatusChange, onDownloadReport }) 
           </div>
 
           <button
-            onClick={onDownloadReport}
+            onClick={handleDownloadClick}
             className="ml-auto flex items-center gap-2 px-3.5 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
           >
             <FileText className="w-4 h-4" />
@@ -205,6 +211,7 @@ export const EquipmentTable = ({ equipment, onStatusChange, onDownloadReport }) 
         </div>
       </div>
 
+      {/* tabela */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full table-fixed">
@@ -234,16 +241,24 @@ export const EquipmentTable = ({ equipment, onStatusChange, onDownloadReport }) 
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-                {filteredAndSorted.map((item) => {
+              {filteredAndSorted.map((item) => {
                 const availableTransitions = getAvailableStatusTransitions(item.status);
                 const isRetired = item.status === 'WYCOFANY';
+
                 return (
-                  <tr key={item.id} className={`hover:bg-gray-50 ${isRetired ? 'opacity-60' : ''}`}>
+                  <tr
+                    key={item.id}
+                    className={`hover:bg-gray-50 ${isRetired ? 'opacity-60' : ''}`}
+                  >
                     <td className="px-4 py-4">
                       <div className="flex flex-col">
-                        <div className="text-sm font-medium text-gray-900 truncate">{item.name}</div>
+                        <div className="text-sm font-medium text-gray-900 truncate">
+                          {item.name}
+                        </div>
                         {item.model && (
-                          <div className="text-sm text-gray-500 truncate">Model: {item.model}</div>
+                          <div className="text-sm text-gray-500 truncate">
+                            Model: {item.model}
+                          </div>
                         )}
                       </div>
                     </td>
@@ -262,22 +277,22 @@ export const EquipmentTable = ({ equipment, onStatusChange, onDownloadReport }) 
                       </div>
                     </td>
                     <td className="px-4 py-4 text-sm">
-                    {(() => {
-                      const dateDisplay = getDateDisplay(item);
-                      return (
-                        <div className="flex flex-col">
-                          <span className={dateDisplay.dateColor}>
-                            {dateDisplay.dateText}
-                          </span>
-                          {dateDisplay.showWarning && (
-                            <span className="text-xs text-red-400 mt-0.5">
-                              Zbliża się termin
+                      {(() => {
+                        const dateDisplay = getDateDisplay(item);
+                        return (
+                          <div className="flex flex-col">
+                            <span className={dateDisplay.dateColor}>
+                              {dateDisplay.dateText}
                             </span>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </td>
+                            {dateDisplay.showWarning && (
+                              <span className="text-xs text-red-400 mt-0.5">
+                                Zbliża się termin
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </td>
                     <td className="px-4 py-4 text-sm">
                       {isRetired ? (
                         <span className="text-gray-400 text-xs">Brak akcji</span>
@@ -294,7 +309,9 @@ export const EquipmentTable = ({ equipment, onStatusChange, onDownloadReport }) 
                             isOpen={editingStatusId === item.id}
                             buttonRef={{ current: buttonRefs.current[item.id] }}
                             availableStatuses={availableTransitions}
-                            onSelect={(status) => handleStatusChangeClick(item.id, item.status, status)}
+                            onSelect={(status) =>
+                              handleStatusChangeClick(item.id, item.status, status)
+                            }
                             onClose={() => setEditingStatusId(null)}
                           />
                         </>
@@ -318,4 +335,3 @@ export const EquipmentTable = ({ equipment, onStatusChange, onDownloadReport }) 
     </div>
   );
 };
-

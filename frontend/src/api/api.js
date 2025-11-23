@@ -9,11 +9,14 @@ const api = axios.create({
   },
 });
 
-// API do komunikacji z backendem Spring Boot
-export const equipmentApi = {
+const compact = (obj) =>
+  Object.fromEntries(
+    Object.entries(obj).filter(([_, v]) => v !== undefined && v !== null && v !== '')
+  );
 
+export const equipmentApi = {
   async list(status) {
-    const allowed = ['SPRAWNY','W_NAPRAWIE','WYCOFANY','WYMAGA_PRZEGLADU'];
+    const allowed = ['SPRAWNY', 'W_NAPRAWIE', 'WYCOFANY', 'WYMAGA_PRZEGLADU'];
     const params = allowed.includes(status) ? { status } : undefined;
     const response = await api.get('/sprzet', { params });
     return response.data;
@@ -24,24 +27,28 @@ export const equipmentApi = {
     return response.data;
   },
 
-  async getById(id) {
-    const response = await api.get(`/sprzet/${id}`);
-    return response.data;
-  },
-
   async updateStatus(id, status, nextInspectionDate) {
     const body = nextInspectionDate ? { status, nextInspectionDate } : { status };
-    const response = await api.patch(`/sprzet/${id}/status`, body);
-    return response.data;
+    const res = await api.patch(`/sprzet/${id}/status`, body);
+    return res.data;
   },
 
-  async downloadReport(status) {
-    const params = status ? { status } : undefined;
-    const response = await api.get('/raport', {
-      params,
-      responseType: 'blob', 
+  // ⬇⬇⬇ KLUCZOWA METODA DO PDF-a ⬇⬇⬇
+  async downloadReport(filters = {}) {
+    const params = compact({
+      status: filters.status,
+      location: filters.location,
+      type: filters.type,
+      sortBy: filters.sortBy === 'inspectionDate' ? 'inspectionDate' : 'name',
+      sortDir: 'asc',
     });
-    return response.data;
+
+    const res = await api.get('/raport', {
+      params,
+      responseType: 'blob',
+    });
+    return res.data;
   },
 };
 
+export const mockApi = equipmentApi;

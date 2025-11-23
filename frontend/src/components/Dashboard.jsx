@@ -51,26 +51,24 @@ export const Dashboard = () => {
     }
   };
 
-  // Generowanie i pobieranie raportu PDF
-  const handleDownloadPdf = async () => {
-    try {
-      // Backend zwraca plik jako blob
-      const blob = await api.downloadReport();
-      // Tworzymy tymczasowy URL do pobrania pliku
-      const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'raport-sprzet.pdf';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      // Zwalniamy pamięć
-      window.URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error('Błąd generowania raportu:', e);
-      alert('Nie udało się wygenerować raportu PDF.');
-    }
-  };
+const handleDownloadReport = async (filters) => {
+  try {
+    const blob = await api.downloadReport(filters);
+
+    const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'raport-sprzetu.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error('Błąd generowania raportu PDF:', e);
+    alert('Nie udało się wygenerować raportu PDF.');
+  }
+};
+
 
 
   const stats = [
@@ -148,7 +146,7 @@ export const Dashboard = () => {
         <EquipmentTable
           equipment={equipment}
           onStatusChange={handleStatusChange}
-          onDownloadReport={handleDownloadPdf}
+          onDownloadReport={handleDownloadReport}
         />
 
         <EquipmentForm

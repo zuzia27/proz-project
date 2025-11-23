@@ -1,6 +1,7 @@
 package pl.proz.sprzet.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,7 +13,7 @@ import pl.proz.sprzet.model.StatusSprzetu;
 import java.time.LocalDate;
 import java.util.List;
 
-public interface SprzetRepository extends JpaRepository<Sprzet, Long> {
+public interface SprzetRepository extends JpaRepository<Sprzet, Long>, JpaSpecificationExecutor<Sprzet> {
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Transactional
